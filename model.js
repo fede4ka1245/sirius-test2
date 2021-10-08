@@ -1,10 +1,9 @@
-const mongoose = require('mongoose')
 const schems = require('./db.js')
 const {nanoid} = require('nanoid')
 
 
 async function get(id, schema){
-  return await schema.findOne(id)
+  return await schema.findOne({id})
 }
 
 async function create(obj, schema){
@@ -12,30 +11,27 @@ async function create(obj, schema){
     obj.id = nanoid()
     const newObj = new schema(obj)
     await newObj.save()
-    return true
+    return obj
   } catch (err) {
     console.log(err)
-    return false
   }
 }
 
-async function update(id, obj, schema){
+async function update(id, changedObj, schema){
   try{
-    await schema.findOnaAndUpdate({id}, obj)
-    return true
+    const obj = await schema.findOneAndUpdate({id}, changedObj)
+    return obj
   } catch (err) {
     console.log(err)
-    return false
   }
 }
 
 async function remove(id, schema){
   try{
-    await schema.deleteOne({id})
-    return true
+    const obj = await schema.findOneAndDelete({id}) 
+    return obj
   } catch (err) {
     console.log(err)
-    return false
   }
 }
 
@@ -52,9 +48,13 @@ async function getSeller({id}){
   return await get(id, schems.sellerSchema)
 }
 
+async function getPurchases({customerId}){
+  const customer = await schems.customerSchema.findOne({id: customerId})
+  return customer.purchases
+} 
+
 async function getCustomers(){
-  console.log(1)
-  return await schems.customerSchema.find()
+  return await schems.customerSchema.find({})
 }
 
 async function getBouquets(){
@@ -66,18 +66,21 @@ async function getSellers(){
 }
 
 async function createCustomer({customer}){
+  console.log(12);
   return await create(customer, schems.customerSchema)
 }
 
 async function updateCustomer({id, customer}){
-  return await update(id, costumer, schems.customerSchema)
+  return await update(id, customer, schems.customerSchema)
 }
 
 async function deleteCustomer({id}){
   return await remove(id, schems.customerSchema)
 }
 
-async function creteSeller({seller}){
+async function createSeller({seller}){
+  creationDate = new Date()
+  seller.creationDate = `${creationDate.getDate()}.${creationDate.getMonth()}.${creationDate.getFullYear()}`
   return await create(seller, schems.sellerSchema)
 }
 
@@ -89,7 +92,10 @@ async function deleteSeller({id}){
   return await remove(id, schems.sellerSchema)
 }
 
-async function creteBouquet({bouquet}){
+async function createBouquet({bouquet}){
+  const seller = await schems.sellerSchema.findOne({id: bouquet.sellerId})
+  seller.bouquets.push(bouquet)
+  await schems.sellerSchema.findOneAndUpdate({id: seller.id}, seller)
   return await create(bouquet, schems.bouquetSchema)
 }
 
@@ -98,40 +104,59 @@ async function updateBouquet({id, bouquet}){
 }
 
 async function deleteBouquet({id}){
+  const bouquet = await schems.bouquetSchema.findOne({id})
+  sellerId = bouquet.sellerId
+  const seller = await schems.sellerSchema.findOne({id: sellerId})
+  if (seller.bouquets.indexOf(bouquet)){
+    seller.bouquets.splice(seller.bouquets.indexOf(bouquet))
+    await schems.sellerSchema.findOneAndUpdate({id: sellerId}, seller)
+  }
   return await remove(id, schems.bouquetSchema)
+}
+
+async function purchaseBouquet({bouquetId, customerId}){
+  try{
+    const bouquet = await schems.bouquetSchema.findOne({id: bouquetId})
+    const customer = await schems.customerSchema.findOne({id: customerId})
+    const bouquetSeller = await schems.sellerSchema.findOne({ id: bouquet.sellerId })
+    if (bouquetSeller.bouquetsCounter){
+      bouquetSeller.bouquetsCounter += 1
+    } else {
+      bouquetSeller.bouquetsCounter = 1
+    }
+    const purchase = {
+      id: nanoid(),
+      bouquetId: bouquetId,
+      customerId: customerId,
+      totalPrice: bouquet.price * 1.3,
+      serviceRevenue: bouquet.price * 0.3
+    }
+    customer.purchases.push(purchase)
+    console.log(bouquetSeller.bouquetsCounter)
+    await schems.customerSchema.findOneAndUpdate({id: customerId}, customer)
+    await schems.sellerSchema.findOneAndUpdate({id: bouquetSeller.id}, bouquetSeller)
+    return purchase
+  } catch(err){
+    console.log(err)
+  }
 }
 
 module.exports = {
   getCustomer,
   getBouquet,
   getSeller,
-  getCustomers,
+  getPurchases,
   getBouquets,
   getSellers,
   createCustomer,
   updateCustomer,
   deleteCustomer,
-  creteSeller,
+  createSeller,
   updateSeller,
   deleteSeller,
-  creteBouquet,
+  createBouquet,
   updateBouquet,
-  deleteBouquet
+  deleteBouquet,
+  purchaseBouquet,
+  getCustomers
 }
-
-
-
-
-// type Mutation {
-//   createCustomer(customer: Customer): Customer
-//   updateCustomer(id: String, customer: Customer): Customer
-//   deleteCustomer(id: String): Customer 
-
-//   createBouquet(bouquet: Bouquet): Bouquet
-//   updateBouquet(id: String, bouquet: Bouquet): Bouquet
-//   deleteBouquet(id: String): Bouquet 
-
-//   createSeller(seller: Seller): Seller
-//   updateSeller(id: String, seller: Seller): Seller
-//   deleteSeller(id: String): Seller
-// }

@@ -7,7 +7,7 @@ const schema = buildSchema(`
     name: String
     price: Float
     pictureLink: String
-    seller: Seller
+    sellerId: String
   }
 
   type Seller {
@@ -16,7 +16,7 @@ const schema = buildSchema(`
     pictureLink: String
     creationDate: String
     bouquets: [Bouquet]
-    soldBouqetsCounter: Int
+    bouquetsCounter: Int
   }
 
   type Customer {
@@ -28,8 +28,8 @@ const schema = buildSchema(`
 
   type Purchase {
     id: String
-    bouquet: Bouquet
-    customer: Customer
+    bouquetId: String
+    customerId: String 
     totalPrice: Float
     serviceRevenue: Float
   }
@@ -38,13 +38,12 @@ const schema = buildSchema(`
     name: String
     price: Float
     pictureLink: String
+    sellerId: String
   }
 
   input SellerInput {
     name: String
     pictureLink: String
-    creationDate: String
-    soldBouqetsCounter: Int
   }
 
   input CustomerInput {
@@ -57,25 +56,26 @@ const schema = buildSchema(`
     getBouquet(id: String): Bouquet
     getSeller(id: String): Seller
 
-    getCustomers: [Customer]
     getBouquets: [Bouquet]
     getSellers: [Seller]
+    getCustomers: [Customer]
+    getPurchases(customerId: String): [Purchase]
   }
 
   type Mutation {
-    createCustomer(customer: CustomerInput): Boolean
-    updateCustomer(id: String, customer: CustomerInput): Boolean
-    deleteCustomer(id: String): Boolean
+    createCustomer(customer: CustomerInput): Customer
+    updateCustomer(id: String, customer: CustomerInput): Customer
+    deleteCustomer(id: String): Customer
 
-    createBouquet(bouquet: BouquetInput): Boolean
-    updateBouquet(id: String, bouquet: BouquetInput): Boolean
-    deleteBouquet(id: String): Boolean
+    createBouquet(bouquet: BouquetInput): Bouquet
+    updateBouquet(id: String, bouquet: BouquetInput): Bouquet
+    deleteBouquet(id: String): Bouquet
 
-    createSeller(seller: SellerInput): Boolean
-    updateSeller(id: String, seller: SellerInput): Boolean
-    deleteSeller(id: String): Boolean
+    createSeller(seller: SellerInput): Seller
+    updateSeller(id: String, seller: SellerInput): Seller
+    deleteSeller(id: String): Seller
 
-    purchaseBouquet(id: String!): [Purchase]
+    purchaseBouquet(bouquetId: String!, customerId: String!): Purchase
   }
 
 `)

@@ -5,7 +5,7 @@ const bouquetSchema = mongoose.Schema({
   name: String,
   price: Number,
   pictureLink: String,
-  seller: mongoose.Schema.Types.Mixed
+  sellerId: String
 })
 
 const sellerSchema = mongoose.Schema({
@@ -13,8 +13,14 @@ const sellerSchema = mongoose.Schema({
   name: String, 
   pictureLink: String, 
   creationDate: String,
-  bouquets: [String],
-  soldBouqetsCounter: Number
+  bouquets: {
+    type: mongoose.Schema.Types.Mixed,
+    default: []
+  },
+  bouquetsCounter: {
+    type: Number,
+    default: 0
+  }
 })
 
 const customerSchema = mongoose.Schema({
@@ -23,7 +29,7 @@ const customerSchema = mongoose.Schema({
   email: String,
   purchases: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: []
   }
 })
 
@@ -31,8 +37,17 @@ const serviceSchema = mongoose.Schema({
   revenue: Number
 }) 
 
+function startDatabase(){
+  mongoose.connect("mongodb+srv://bragin:qweszxcda@cluster0.i1szs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+  const db = mongoose.connection
+  db.on('error', (error) => console.error(error))
+  db.once('open', () => console.log('Connected to Database'))
+}
+
 module.exports = {
   bouquetSchema: mongoose.model('bouquet', bouquetSchema),
   sellerSchema: mongoose.model('seller', sellerSchema),
-  customerSchema: mongoose.model('customer', customerSchema)
+  customerSchema: mongoose.model('customer', customerSchema),
+  serviceSchema: mongoose.model('service', serviceSchema),
+  startDatabase
 }
