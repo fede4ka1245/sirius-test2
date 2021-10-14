@@ -38,7 +38,7 @@ const serviceSchema = mongoose.Schema({
 }) 
 
 function startDatabase(){
-  mongoose.connect("mongodb+srv://bragin:qweszxcda@cluster0.i1szs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+  mongoose.connect(`mongodb+srv://bragin:${process.env.PASSWORD}@cluster0.i1szs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`)
   const db = mongoose.connection
   db.on('error', (error) => console.error(error))
   db.once('open', () => console.log('Connected to Database'))
